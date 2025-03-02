@@ -37,40 +37,4 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#E6F0FF',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#3F51B5',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 40,
-  },
-  button: {
-    backgroundColor: '#3F51B5',
-    padding: 15,
-    borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  logoutButton: {
-    backgroundColor: '#F44336',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
-
 export default HomeScreen;
