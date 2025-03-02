@@ -167,3 +167,103 @@ class ChangePasswordView(generics.UpdateAPIView):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class NotificationSettingsView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSettingsSerializer
+    
+    def get_object(self):
+        return self.request.user.settings
+    
+    def get(self, request, *args, **kwargs):
+        settings = self.get_object()
+        return Response({
+            'notification_enabled': settings.notification_enabled,
+            'reminder_frequency': settings.reminder_frequency
+        })
+    
+    def patch(self, request, *args, **kwargs):
+        settings = self.get_object()
+        
+        if 'notification_enabled' in request.data:
+            settings.notification_enabled = request.data['notification_enabled']
+        
+        if 'reminder_frequency' in request.data:
+            settings.reminder_frequency = request.data['reminder_frequency']
+        
+        settings.save()
+        
+        return Response({
+            'notification_enabled': settings.notification_enabled,
+            'reminder_frequency': settings.reminder_frequency
+        })
+
+class HealthAppSettingsView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user.settings
+    
+    def get(self, request, *args, **kwargs):
+        settings = self.get_object()
+        return Response({
+            'health_app_sync': settings.health_app_sync,
+            'health_app_type': settings.health_app_type
+        })
+    
+    def patch(self, request, *args, **kwargs):
+        settings = self.get_object()
+        
+        if 'health_app_sync' in request.data:
+            settings.health_app_sync = request.data['health_app_sync']
+        
+        if 'health_app_type' in request.data:
+            settings.health_app_type = request.data['health_app_type']
+        
+        settings.save()
+        
+        return Response({
+            'health_app_sync': settings.health_app_sync,
+            'health_app_type': settings.health_app_type
+        })
+
+class CommunitySettingsView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user.settings
+    
+    def get(self, request, *args, **kwargs):
+        settings = self.get_object()
+        return Response({
+            'community_enabled': settings.community_enabled,
+            'community_username': settings.community_username
+        })
+    
+    def patch(self, request, *args, **kwargs):
+        settings = self.get_object()
+        
+        if 'community_enabled' in request.data:
+            settings.community_enabled = request.data['community_enabled']
+        
+        if 'community_username' in request.data:
+            settings.community_username = request.data['community_username']
+        
+        settings.save()
+        
+        return Response({
+            'community_enabled': settings.community_enabled,
+            'community_username': settings.community_username
+        })
+
+# For the emergency contact, we'll use a view that returns the emergency contact information
+class EmergencyContactView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        profile = request.user.profile
+        return Response({
+            'emergency_contact_name': profile.emergency_contact_name,
+            'emergency_contact_phone': profile.emergency_contact_phone,
+            'emergency_contact_relationship': profile.emergency_contact_relationship
+        })
