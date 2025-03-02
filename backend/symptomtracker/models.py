@@ -38,14 +38,29 @@ def save_user_profile(sender, instance, **kwargs):
 
 class UserSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    # Basic settings
     dark_mode = models.BooleanField(default=False)
     language = models.CharField(max_length=10, default='en')
+
+    notification_enabled = models.BooleanField(default=True)
     reminder_frequency = models.CharField(
         max_length=10,
         choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly'), ('none', 'None')],
         default='daily'
     )
     data_sharing = models.BooleanField(default=False)  # Opt-in for anonymized data sharing
+
+    # Health App Integration
+    health_app_sync = models.BooleanField(default=False)
+    health_app_type = models.CharField(
+        max_length=20,
+        choices=[('apple', 'Apple Health'), ('google', 'Google Fit'), ('samsung', 'Samsung Health'), ('none', 'None')],
+        default='none'
+    )
+    
+    # Community connection
+    community_enabled = models.BooleanField(default=False)
+    community_username = models.CharField(max_length=100, blank=True, null=True)
     
     def __str__(self):
         return f"{self.user.username}'s settings"

@@ -21,7 +21,17 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSettings
-        fields = ['dark_mode', 'language', 'reminder_frequency', 'data_sharing']
+        fields = [
+            'dark_mode', 
+            'language', 
+            'notification_enabled',
+            'reminder_frequency', 
+            'health_app_sync',
+            'health_app_type',
+            'community_enabled',
+            'community_username',
+            'data_sharing'
+        ]
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
