@@ -2,7 +2,10 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import UserProfile, UserSettings
+from .models import (
+    PhysicalPainEntry, MentalWellnessEntry, DiaryEntry, 
+    PhysicianInfo, Notification, UserProfile, UserSettings
+)
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,3 +91,33 @@ class ChangePasswordSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"confirm_password": "Password fields didn't match."})
         return attrs
+    
+class PhysicalPainEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhysicalPainEntry
+        fields = ['id', 'pain_level', 'notes', 'timestamp', 'sent_to_physician']
+        read_only_fields = ['id', 'timestamp']
+
+class MentalWellnessEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MentalWellnessEntry
+        fields = ['id', 'wellness_level', 'notes', 'timestamp', 'sent_to_physician']
+        read_only_fields = ['id', 'timestamp']
+
+class DiaryEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiaryEntry
+        fields = ['id', 'content', 'timestamp', 'sent_to_physician']
+        read_only_fields = ['id', 'timestamp']
+
+class PhysicianInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhysicianInfo
+        fields = ['id', 'physician_name', 'physician_email', 'physician_phone']
+        read_only_fields = ['id']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'notification_type', 'title', 'message', 'time', 'is_active', 'days']
+        read_only_fields = ['id']

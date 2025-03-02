@@ -1,13 +1,22 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
+from django.utils import timezone
+from datetime import datetime, timedelta
 from django.contrib.auth import authenticate, update_session_auth_hash
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from django.contrib.auth.models import User
-from .models import UserProfile, UserSettings
-from .serializers import UserSerializer, RegisterSerializer, UserProfileSerializer, UserSettingsSerializer, ChangePasswordSerializer
+from .models import (
+    PhysicalPainEntry, MentalWellnessEntry, DiaryEntry,
+    PhysicianInfo, Notification
+)
+from .serializers import (
+    PhysicalPainEntrySerializer, MentalWellnessEntrySerializer, DiaryEntrySerializer,
+    PhysicianInfoSerializer, NotificationSerializer, RegisterSerializer, UserSerializer, 
+    UserSettingsSerializer, ChangePasswordSerializer, UserProfileSerializer
+)
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -267,3 +276,187 @@ class EmergencyContactView(generics.RetrieveAPIView):
             'emergency_contact_phone': profile.emergency_contact_phone,
             'emergency_contact_relationship': profile.emergency_contact_relationship
         })
+    
+class PhysicalPainEntryViewSet(viewsets.ModelViewSet):
+    serializer_class = PhysicalPainEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return PhysicalPainEntry.objects.filter(user=self.request.user).order_by('-timestamp')
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        recent_entries = self.get_queryset()[:5]
+        serializer = self.get_serializer(recent_entries, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def send_to_physician(self, request, pk=None):
+        entry = self.get_object()
+        # Implement email sending logic here
+        entry.sent_to_physician = True
+        entry.save()
+        return Response({'status': 'sent to physician'})
+
+class MentalWellnessEntryViewSet(viewsets.ModelViewSet):
+    serializer_class = MentalWellnessEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return MentalWellnessEntry.objects.filter(user=self.request.user).order_by('-timestamp')
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        recent_entries = self.get_queryset()[:5]
+        serializer = self.get_serializer(recent_entries, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def send_to_physician(self, request, pk=None):
+        entry = self.get_object()
+        # Implement email sending logic here
+        entry.sent_to_physician = True
+        entry.save()
+        return Response({'status': 'sent to physician'})
+
+class DiaryEntryViewSet(viewsets.ModelViewSet):
+    serializer_class = DiaryEntrySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return DiaryEntry.objects.filter(user=self.request.user).order_by('-timestamp')
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def send_to_physician(self, request, pk=None):
+        entry = self.get_object()
+        # Implement email sending logic here
+        entry.sent_to_physician = True
+        entry.save()
+        return Response({'status': 'sent to physician'})
+
+class PhysicianInfoViewSet(viewsets.ModelViewSet):
+    serializer_class = PhysicianInfoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return PhysicianInfo.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        # Ensure user only has one physician info record
+        PhysicianInfo.objects.filter(user=self.request.user).delete()
+        serializer.save(user=self.request.user)
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+# Data analysis view
+class DataAnalysisView(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    @action(detail=False, methods=['get'])
+    def pain_trends(self, request):
+        # Get date range from query params or default to last 30 days
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now() - timedelta(days=days)
+        
+        entries = PhysicalPainEntry.objects.filter(
+            user=request.user,
+            timestamp__gte=start_date
+        ).order_by('timestamp')
+        
+        # Prepare data for frontend visualization
+        data = {
+            'labels': [],
+            'datasets': [{
+                'label': 'Pain Level',
+                'data': []
+            }]
+        }
+        
+        for entry in entries:
+            data['labels'].append(entry.timestamp.strftime('%Y-%m-%d'))
+            data['datasets'][0]['data'].append(entry.pain_level)
+        
+        return Response(data)
+    
+    @action(detail=False, methods=['get'])
+    def mental_wellness_trends(self, request):
+        # Get date range from query params or default to last 30 days
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now() - timedelta(days=days)
+        
+        entries = MentalWellnessEntry.objects.filter(
+            user=request.user,
+            timestamp__gte=start_date
+        ).order_by('timestamp')
+        
+        # Prepare data for frontend visualization
+        data = {
+            'labels': [],
+            'datasets': [{
+                'label': 'Mental Wellness',
+                'data': []
+            }]
+        }
+        
+        for entry in entries:
+            data['labels'].append(entry.timestamp.strftime('%Y-%m-%d'))
+            data['datasets'][0]['data'].append(entry.wellness_level)
+        
+        return Response(data)
+    
+class HomeScreenDataView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        today = timezone.now()
+        
+        # Get today's data
+        today_pain = PhysicalPainEntry.objects.filter(
+            user=user, 
+            timestamp__date=today.date()
+        ).order_by('-timestamp').first()
+        
+        today_mental = MentalWellnessEntry.objects.filter(
+            user=user, 
+            timestamp__date=today.date()
+        ).order_by('-timestamp').first()
+        
+        # Format date for display
+        formatted_date = today.strftime('%A, %B %d')
+        
+        # Get user's first name for the welcome message
+        first_name = user.first_name or user.username
+        
+        # Compile the data
+        data = {
+            'date': formatted_date,
+            'user_name': first_name,
+            'has_logged_today': {
+                'physical': bool(today_pain),
+                'mental': bool(today_mental),
+            },
+            'latest_entries': {
+                'physical': PhysicalPainEntrySerializer(today_pain).data if today_pain else None,
+                'mental': MentalWellnessEntrySerializer(today_mental).data if today_mental else None,
+            }
+        }
+        
+        return Response(data)
